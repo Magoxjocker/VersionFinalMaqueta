@@ -1,0 +1,67 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'Historial visual de eventos y visitas.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Historial de eventos</h2>
+      <div class="demo-small">Registro de altas, cambios y acciones operativas.</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr><th>Fecha</th><th>Evento</th><th>Accion</th><th>Detalle</th></tr>
+      </thead>
+      <tbody>
+        <% if (!historialEventos.length) { %>
+          <tr><td colspan="4" class="text-center text-muted">No hay historial de eventos.</td></tr>
+        <% } else { %>
+          <% historialEventos.forEach((item) => { %>
+            <tr>
+              <td><%= formatDateTime(item.created_at) %></td>
+              <td><%= item.evento_nombre || '-' %></td>
+              <td><%= item.accion %></td>
+              <td><%= item.detalle || '-' %></td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Historial de visitas</h2>
+  <div class="table-wrap">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr><th>Fecha</th><th>Persona</th><th>Evento</th><th>Accion</th><th>Detalle</th></tr>
+      </thead>
+      <tbody>
+        <% if (!historialVisitas.length) { %>
+          <tr><td colspan="5" class="text-center text-muted">No hay historial de visitas.</td></tr>
+        <% } else { %>
+          <% historialVisitas.forEach((item) => { %>
+            <tr>
+              <td><%= formatDateTime(item.created_at) %></td>
+              <td><%= item.persona_nombre || '-' %></td>
+              <td><%= item.evento_nombre || 'Visita diaria' %></td>
+              <td><%= item.accion %></td>
+              <td><%= item.detalle || '-' %></td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

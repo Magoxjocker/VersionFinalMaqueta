@@ -1,0 +1,117 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'Resumen por eventos activos y accesos de gestion.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="grid-cards">
+  <article class="metric">
+    <span>Eventos activos</span>
+    <strong><%= resumenEventos.length %></strong>
+  </article>
+  <article class="metric">
+    <span>Unidades</span>
+    <strong><%= unidades.length %></strong>
+  </article>
+  <article class="metric">
+    <span>Usuarios</span>
+    <strong><%= usuarios.length %></strong>
+  </article>
+  <article class="metric">
+    <span>Eventos totales</span>
+    <strong><%= eventos.length %></strong>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Eventos activos</h2>
+      <div class="demo-small">Resumen por evento con datos operativos.</div>
+    </div>
+    <button class="btn btn-outline-dark btn-sm" type="button" onclick="alert('Proximamente.\\nLa generacion de informes estara disponible en una futura version.')">Generar reporte</button>
+  </div>
+  <div class="cards-row">
+    <% if (!resumenEventos.length) { %>
+      <div class="alert alert-secondary mb-0 w-100">No hay eventos activos.</div>
+    <% } else { %>
+      <% resumenEventos.forEach((evento) => { %>
+        <article class="event-card">
+          <strong><%= evento.nombre %></strong>
+          <div class="event-meta"><%= evento.codigo_evento %></div>
+          <div class="event-meta"><%= formatDate(evento.fecha_inicio) %> a <%= formatDate(evento.fecha_termino) %></div>
+          <div class="event-meta"><%= formatTime(evento.hora_inicio) %> - <%= formatTime(evento.hora_termino) %></div>
+          <hr>
+          <div class="demo-small">Unidades invitadas: <%= evento.total_unidades || 0 %></div>
+          <div class="demo-small">Personas registradas: <%= evento.total_personas || 0 %></div>
+          <div class="demo-small">Asistentes: <%= evento.total_asistentes || 0 %></div>
+          <div class="demo-small">Ausentes: <%= evento.total_ausentes || 0 %></div>
+          <div class="demo-small">Vehiculos: <%= evento.total_vehiculos || 0 %></div>
+          <div class="demo-small">Estacionamientos asignados: <%= evento.estacionamientos_asignados || 0 %></div>
+          <div class="demo-small">Estacionamientos utilizados: <%= evento.estacionamientos_utilizados || 0 %></div>
+        </article>
+      <% }); %>
+    <% } %>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Historial reciente</h2>
+      <div class="demo-small">Ultimos movimientos registrados en el sistema.</div>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="table-wrap">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr><th>Fecha</th><th>Evento</th><th>Accion</th></tr>
+          </thead>
+          <tbody>
+            <% if (!historialEventos.length) { %>
+              <tr><td colspan="3" class="text-center text-muted">No hay historial de eventos.</td></tr>
+            <% } else { %>
+              <% historialEventos.forEach((item) => { %>
+                <tr>
+                  <td><%= formatDateTime(item.created_at) %></td>
+                  <td><%= item.evento_nombre || '-' %></td>
+                  <td><%= item.accion %></td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="table-wrap">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr><th>Fecha</th><th>Persona</th><th>Accion</th></tr>
+          </thead>
+          <tbody>
+            <% if (!historialVisitas.length) { %>
+              <tr><td colspan="3" class="text-center text-muted">No hay historial de visitas.</td></tr>
+            <% } else { %>
+              <% historialVisitas.forEach((item) => { %>
+                <tr>
+                  <td><%= formatDateTime(item.created_at) %></td>
+                  <td><%= item.persona_nombre || '-' %></td>
+                  <td><%= item.accion %></td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

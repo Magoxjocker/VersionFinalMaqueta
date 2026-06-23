@@ -1,0 +1,109 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'CRUD de usuarios con roles y unidades.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2><%= editingUser ? 'Editar usuario' : 'Nuevo usuario' %></h2>
+      <div class="demo-small">Solo se solicitan los datos necesarios para operar el sistema.</div>
+    </div>
+  </div>
+  <form action="/admin/usuarios" method="post" class="row g-3">
+    <input type="hidden" name="id_usuario" value="<%= editingUser?.id || '' %>">
+    <div class="col-md-4">
+      <label class="form-label">Nombre</label>
+      <input name="nombre" class="form-control" value="<%= editingUser?.nombre || '' %>" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Correo</label>
+      <input name="correo" type="email" class="form-control" value="<%= editingUser?.correo || '' %>" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-select">
+        <option value="ACTIVO" <%= (editingUser?.estado || 'ACTIVO') === 'ACTIVO' ? 'selected' : '' %>>ACTIVO</option>
+        <option value="INACTIVO" <%= editingUser?.estado === 'INACTIVO' ? 'selected' : '' %>>INACTIVO</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Rol</label>
+      <select name="rol_id" class="form-select" required>
+        <% roles.forEach((rol) => { %>
+          <option value="<%= rol.id %>" <%= Number(editingUser?.rol_id) === Number(rol.id) ? 'selected' : '' %>><%= rol.nombre %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Unidad</label>
+      <select name="unidad_id" class="form-select">
+        <option value="">Sin unidad</option>
+        <% unidades.forEach((unidad) => { %>
+          <option value="<%= unidad.id %>" <%= Number(editingUser?.unidad_id) === Number(unidad.id) ? 'selected' : '' %>><%= unidad.nombre %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Contraseña <%= editingUser ? '(dejar en blanco para conservar)' : '' %></label>
+      <input name="clave" type="password" class="form-control" <%= editingUser ? '' : 'required' %>>
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-brand" type="submit"><%= editingUser ? 'Actualizar' : 'Crear' %></button>
+      <% if (editingUser) { %>
+        <a class="btn btn-outline-secondary" href="/admin/usuarios">Cancelar</a>
+      <% } %>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Usuarios registrados</h2>
+      <div class="demo-small">Lista principal del sistema.</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Unidad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!usuarios.length) { %>
+          <tr><td colspan="6" class="text-center text-muted">No hay usuarios registrados.</td></tr>
+        <% } else { %>
+          <% usuarios.forEach((item) => { %>
+            <tr>
+              <td><strong><%= item.nombre %></strong></td>
+              <td><%= item.correo %></td>
+              <td><span class="badge text-bg-dark"><%= item.rol %></span></td>
+              <td><%= item.unidad || '-' %></td>
+              <td><span class="badge <%= item.estado === 'ACTIVO' ? 'text-bg-success' : 'text-bg-secondary' %>"><%= item.estado %></span></td>
+              <td class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="/admin/usuarios?edit=<%= item.id %>">Editar</a>
+                <form action="/admin/usuarios/<%= item.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar este usuario?')">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

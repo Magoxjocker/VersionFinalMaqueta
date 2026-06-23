@@ -1,0 +1,114 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'CRUD de eventos y asignaciones basicas por unidad.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2><%= editingEvent ? 'Editar evento' : 'Nuevo evento' %></h2>
+      <div class="demo-small">Los eventos agrupan personas, unidades y estacionamientos.</div>
+    </div>
+  </div>
+  <form action="/admin/eventos" method="post" class="row g-3">
+    <input type="hidden" name="id_evento" value="<%= editingEvent?.id || '' %>">
+    <div class="col-md-4">
+      <label class="form-label">Nombre</label>
+      <input name="nombre" class="form-control" value="<%= editingEvent?.nombre || '' %>" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Codigo</label>
+      <input name="codigo_evento" class="form-control" value="<%= editingEvent?.codigo_evento || '' %>" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-select">
+        <option value="PROGRAMADO" <%= (editingEvent?.estado || 'PROGRAMADO') === 'PROGRAMADO' ? 'selected' : '' %>>PROGRAMADO</option>
+        <option value="ACTIVO" <%= editingEvent?.estado === 'ACTIVO' ? 'selected' : '' %>>ACTIVO</option>
+        <option value="FINALIZADO" <%= editingEvent?.estado === 'FINALIZADO' ? 'selected' : '' %>>FINALIZADO</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Fecha inicio</label>
+      <input name="fecha_inicio" type="date" class="form-control" value="<%= editingEvent?.fecha_inicio ? String(editingEvent.fecha_inicio).slice(0,10) : '' %>" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Fecha termino</label>
+      <input name="fecha_termino" type="date" class="form-control" value="<%= editingEvent?.fecha_termino ? String(editingEvent.fecha_termino).slice(0,10) : '' %>" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Hora inicio</label>
+      <input name="hora_inicio" type="time" class="form-control" value="<%= editingEvent?.hora_inicio || '' %>" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Hora termino</label>
+      <input name="hora_termino" type="time" class="form-control" value="<%= editingEvent?.hora_termino || '' %>" required>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Unidades invitadas</label>
+      <select name="unidad_ids" class="form-select" multiple size="6">
+        <% unidades.forEach((unidad) => { %>
+          <option value="<%= unidad.id %>" <%= selectedUnitIds.includes(Number(unidad.id)) ? 'selected' : '' %>><%= unidad.nombre %></option>
+        <% }); %>
+      </select>
+      <div class="demo-small mt-1">Mantén presionada la tecla Ctrl para seleccionar varias unidades.</div>
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-brand" type="submit"><%= editingEvent ? 'Actualizar' : 'Crear' %></button>
+      <% if (editingEvent) { %>
+        <a class="btn btn-outline-secondary" href="/admin/eventos">Cancelar</a>
+      <% } %>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Eventos registrados</h2>
+  <div class="table-wrap">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Codigo</th>
+          <th>Fechas</th>
+          <th>Estado</th>
+          <th>Unidades</th>
+          <th>Personas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!eventos.length) { %>
+          <tr><td colspan="7" class="text-center text-muted">No hay eventos registrados.</td></tr>
+        <% } else { %>
+          <% eventos.forEach((item) => { %>
+            <tr>
+              <td><strong><%= item.nombre %></strong></td>
+              <td><%= item.codigo_evento %></td>
+              <td><%= formatDate(item.fecha_inicio) %> a <%= formatDate(item.fecha_termino) %></td>
+              <td><span class="badge <%= item.estado === 'ACTIVO' ? 'text-bg-success' : item.estado === 'FINALIZADO' ? 'text-bg-secondary' : 'text-bg-primary' %>"><%= item.estado %></span></td>
+              <td><%= item.total_unidades || 0 %></td>
+              <td><%= item.total_personas || 0 %></td>
+              <td class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-sm btn-outline-primary" href="/admin/eventos?edit=<%= item.id %>">Editar</a>
+                <form action="/admin/eventos/<%= item.id %>/finalizar" method="post">
+                  <button class="btn btn-sm btn-outline-dark" type="submit">Finalizar</button>
+                </form>
+                <form action="/admin/eventos/<%= item.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar este evento?')">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

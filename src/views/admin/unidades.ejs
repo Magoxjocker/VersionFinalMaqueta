@@ -1,0 +1,74 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'CRUD de unidades institucionales.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2><%= editingUnit ? 'Editar unidad' : 'Nueva unidad' %></h2>
+      <div class="demo-small">Mantiene la estructura organizacional del sistema.</div>
+    </div>
+  </div>
+  <form action="/admin/unidades" method="post" class="row g-3">
+    <input type="hidden" name="id_unidad" value="<%= editingUnit?.id || '' %>">
+    <div class="col-md-4">
+      <label class="form-label">Nombre</label>
+      <input name="nombre" class="form-control" value="<%= editingUnit?.nombre || '' %>" required>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label">Descripcion</label>
+      <input name="descripcion" class="form-control" value="<%= editingUnit?.descripcion || '' %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-select">
+        <option value="ACTIVA" <%= (editingUnit?.estado || 'ACTIVA') === 'ACTIVA' ? 'selected' : '' %>>ACTIVA</option>
+        <option value="INACTIVA" <%= editingUnit?.estado === 'INACTIVA' ? 'selected' : '' %>>INACTIVA</option>
+      </select>
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-brand" type="submit"><%= editingUnit ? 'Actualizar' : 'Crear' %></button>
+      <% if (editingUnit) { %>
+        <a class="btn btn-outline-secondary" href="/admin/unidades">Cancelar</a>
+      <% } %>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Unidades registradas</h2>
+  <div class="table-wrap">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr><th>Nombre</th><th>Descripcion</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        <% if (!unidades.length) { %>
+          <tr><td colspan="4" class="text-center text-muted">No hay unidades registradas.</td></tr>
+        <% } else { %>
+          <% unidades.forEach((item) => { %>
+            <tr>
+              <td><strong><%= item.nombre %></strong></td>
+              <td><%= item.descripcion || '-' %></td>
+              <td><span class="badge <%= item.estado === 'ACTIVA' ? 'text-bg-success' : 'text-bg-secondary' %>"><%= item.estado %></span></td>
+              <td class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="/admin/unidades?edit=<%= item.id %>">Editar</a>
+                <form action="/admin/unidades/<%= item.id %>/eliminar" method="post" onsubmit="return confirm('¿Eliminar esta unidad?')">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

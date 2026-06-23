@@ -1,0 +1,127 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Administrador',
+  subtitle: 'Administracion de cards de estacionamientos por evento.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Seleccionar evento</h2>
+      <div class="demo-small">Cada evento administra sus propias cards de estacionamiento.</div>
+    </div>
+  </div>
+  <form method="get" action="/admin/estacionamientos" class="row g-3 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label">Evento</label>
+      <select name="evento_id" class="form-select" onchange="this.form.submit()">
+        <% if (!eventos.length) { %>
+          <option value="">No hay eventos activos</option>
+        <% } else { %>
+          <% eventos.forEach((evento) => { %>
+            <option value="<%= evento.id %>" <%= Number(selectedEventId) === Number(evento.id) ? 'selected' : '' %>><%= evento.nombre %> - <%= evento.codigo_evento %></option>
+          <% }); %>
+        <% } %>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <button class="btn btn-outline-dark" type="submit">Cargar</button>
+    </div>
+  </form>
+</section>
+
+<section class="grid-cards">
+  <article class="metric">
+    <span>Totales</span>
+    <strong><%= resumenEstacionamientos.total || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Disponibles</span>
+    <strong><%= resumenEstacionamientos.disponibles || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Asignados</span>
+    <strong><%= resumenEstacionamientos.asignados || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Ocupados</span>
+    <strong><%= resumenEstacionamientos.ocupados || 0 %></strong>
+  </article>
+</section>
+
+<section class="panel">
+  <h2>Nuevo estacionamiento</h2>
+  <% if (!selectedEventId) { %>
+    <div class="alert alert-info mb-0">Selecciona un evento para crear sus cards.</div>
+  <% } else { %>
+    <form action="/admin/estacionamientos" method="post" class="row g-3 align-items-end">
+      <input type="hidden" name="evento_id" value="<%= selectedEventId %>">
+      <div class="col-md-4">
+        <label class="form-label">Numero de espacios</label>
+        <input name="cantidad_espacios" type="number" min="1" class="form-control" placeholder="8" required>
+      </div>
+      <div class="col-md-8">
+        <button class="btn btn-brand" type="submit">Crear cards</button>
+      </div>
+    </form>
+  <% } %>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Cards del evento</h2>
+      <div class="demo-small">Cada card representa un estacionamiento fisico del evento seleccionado.</div>
+    </div>
+  </div>
+
+  <% if (!selectedEventId) { %>
+    <div class="alert alert-secondary mb-0">No hay evento seleccionado.</div>
+  <% } else if (!estacionamientos.length) { %>
+    <div class="alert alert-secondary mb-0">Aun no se han creado cards para este evento.</div>
+  <% } else { %>
+    <div class="cards-row">
+      <% estacionamientos.forEach((item) => { %>
+        <article class="event-card" style="min-width: 280px;">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <strong>E-<%= String(item.espacio).padStart(3, '0') %></strong>
+              <div class="event-meta">
+                <%= item.unidad_nombre || 'Sin asignar' %>
+              </div>
+            </div>
+            <span class="badge <%= item.estado === 'OCUPADO' ? 'text-bg-danger' : item.estado === 'ASIGNADO' ? 'text-bg-warning' : 'text-bg-success' %>">
+              <%= item.estado %>
+            </span>
+          </div>
+
+          <hr>
+
+          <form action="/admin/estacionamientos" method="post" class="d-grid gap-2">
+            <input type="hidden" name="id_estacionamiento" value="<%= item.id %>">
+            <input type="hidden" name="evento_id" value="<%= selectedEventId %>">
+            <input type="hidden" name="numero_espacio" value="<%= item.espacio %>">
+            <label class="form-label mb-0">Asignar unidad</label>
+            <select name="unidad_id" class="form-select">
+              <option value="">Sin unidad</option>
+              <% unidades.forEach((unidad) => { %>
+                <option value="<%= unidad.id %>" <%= Number(item.unidad_id) === Number(unidad.id) ? 'selected' : '' %>><%= unidad.nombre %></option>
+              <% }); %>
+            </select>
+            <button class="btn btn-outline-dark" type="submit">Guardar asignacion</button>
+          </form>
+
+          <form class="mt-2" action="/admin/estacionamientos/<%= item.id %>/eliminar?evento_id=<%= selectedEventId %>" method="post" onsubmit="return confirm('¿Eliminar este estacionamiento?')">
+            <button class="btn btn-sm btn-outline-danger w-100" type="submit">Eliminar card</button>
+          </form>
+        </article>
+      <% }); %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>

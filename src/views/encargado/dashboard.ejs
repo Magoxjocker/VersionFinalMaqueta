@@ -1,0 +1,352 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Encargado',
+  subtitle: 'Registro de personas por evento activo o visitas diarias.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="grid-cards">
+  <article class="metric">
+    <span>Eventos activos de la unidad</span>
+    <strong><%= eventosActivos.length %></strong>
+  </article>
+  <article class="metric">
+    <span>Visitas diarias</span>
+    <strong><%= resumenDiario.total_personas || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Ingresos diarios</span>
+    <strong><%= resumenDiario.total_ingresos || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Pendientes</span>
+    <strong><%= resumenDiario.total_pendientes || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Estacionamientos</span>
+    <strong><%= resumenEstacionamientos.total || 0 %></strong>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Cards de trabajo</h2>
+      <div class="demo-small">Selecciona un evento o la card de visitas diarias para abrir el formulario correcto.</div>
+    </div>
+  </div>
+  <div class="cards-row">
+    <% if (!eventosActivos.length) { %>
+      <div class="alert alert-secondary mb-0 w-100">No hay eventos activos para esta unidad.</div>
+    <% } else { %>
+      <% eventosActivos.forEach((evento) => { %>
+        <a class="event-card" href="<%= evento.seleccionUrl %>">
+          <strong><%= evento.nombre %></strong>
+          <div class="event-meta"><%= evento.codigo_evento %></div>
+          <div class="event-meta"><%= formatDate(evento.fecha_inicio) %> a <%= formatDate(evento.fecha_termino) %></div>
+          <div class="event-meta"><%= formatTime(evento.hora_inicio) %> - <%= formatTime(evento.hora_termino) %></div>
+          <hr>
+          <div class="demo-small">Estado: <%= evento.estado %></div>
+        </a>
+      <% }); %>
+    <% } %>
+    <a class="event-card" href="/encargado?scope=diaria">
+      <strong>Visitas diarias</strong>
+      <div class="event-meta">Registro fuera de evento</div>
+      <hr>
+      <div class="demo-small">Total personas: <%= resumenDiario.total_personas || 0 %></div>
+      <div class="demo-small">Ingresos: <%= resumenDiario.total_ingresos || 0 %></div>
+      <div class="demo-small">Pendientes: <%= resumenDiario.total_pendientes || 0 %></div>
+    </a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Registro de persona</h2>
+      <div class="demo-small">La persona principal se registra en el evento de la card seleccionada. El pasajero se registra aparte si corresponde.</div>
+    </div>
+  </div>
+
+  <% if (!selectedScope) { %>
+    <div class="alert alert-info mb-0">Selecciona una card para habilitar el registro.</div>
+  <% } else { %>
+    <form action="/encargado/personas" method="post" class="row g-3" id="persona-form">
+      <input type="hidden" name="return_scope" value="<%= selectedScope || '' %>">
+      <input type="hidden" name="scope" value="<%= selectedScope || '' %>">
+      <input type="hidden" name="evento_id" value="<%= selectedScope === 'evento' ? selectedEventId : '' %>">
+      <div class="col-md-3">
+        <label class="form-label">Tipo documento</label>
+        <select name="tipo_documento" class="form-select" required>
+          <option value="CEDULA">Cedula</option>
+          <option value="PASAPORTE">Pasaporte</option>
+          <option value="EXTRANJERO">Extranjero</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Numero documento</label>
+        <input name="numero_documento" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Nombre completo</label>
+        <input name="nombre_completo" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Correo</label>
+        <input name="correo" type="email" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Telefono</label>
+        <input name="telefono" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Tipo de llegada</label>
+        <select name="tipo_llegada" class="form-select" id="tipo-llegada" required>
+          <option value="A_PIE">Peaton</option>
+          <option value="VEHICULO_PROPIO">Vehiculo propio</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Estacionamiento</label>
+        <select name="requiere_estacionamiento" class="form-select">
+          <option value="NO">No usar</option>
+          <option value="SI">Usar disponible</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Glosa visita diaria</label>
+        <input name="glosa_visita" class="form-control" placeholder="Motivo o comentario de la visita diaria">
+      </div>
+
+      <div class="col-12 collapse-box" id="vehiculo-box" hidden>
+        <div class="row g-3">
+          <div class="col-12">
+            <strong>Datos del vehiculo</strong>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Patente</label>
+            <input name="patente" class="form-control" placeholder="ABCD12">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Marca</label>
+            <input name="marca" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Modelo</label>
+            <input name="modelo" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Color</label>
+            <input name="color" class="form-control">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="on" id="con-pasajero" name="con_pasajero">
+          <label class="form-check-label" for="con-pasajero">Viene con pasajero</label>
+        </div>
+      </div>
+
+      <div class="col-12 collapse-box" id="pasajero-box" hidden>
+        <div class="row g-3">
+          <div class="col-12">
+            <strong>Registro de pasajero</strong>
+            <div class="demo-small">El pasajero se guarda como persona independiente y debe elegir su propio evento.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Tipo documento pasajero</label>
+            <select name="tipo_documento_pasajero" class="form-select">
+              <option value="CEDULA">Cedula</option>
+              <option value="PASAPORTE">Pasaporte</option>
+              <option value="EXTRANJERO">Extranjero</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Numero documento pasajero</label>
+            <input name="numero_documento_pasajero" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Nombre completo pasajero</label>
+            <input name="nombre_completo_pasajero" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Evento pasajero</label>
+            <select name="evento_id_pasajero" class="form-select">
+              <option value="">Selecciona evento</option>
+              <% eventosActivos.forEach((evento) => { %>
+                <option value="<%= evento.id %>"><%= evento.nombre %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 d-flex gap-2">
+        <button class="btn btn-brand" type="submit">Registrar persona</button>
+      </div>
+    </form>
+  <% } %>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>
+        <% if (selectedScope === 'diaria') { %>
+          Visitas diarias
+        <% } else if (selectedScope === 'evento') { %>
+          Personas del evento
+        <% } else { %>
+          Selecciona una card
+        <% } %>
+      </h2>
+      <div class="demo-small">Listado operativo filtrado por la seleccion activa.</div>
+    </div>
+  </div>
+
+  <% if (!selectedScope) { %>
+    <div class="alert alert-info mb-0">Selecciona un evento o la card de visitas diarias para ver el listado.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Documento</th>
+            <th>Evento / Unidad</th>
+            <th>Llegada</th>
+            <th>Vehiculo</th>
+            <th>Ingreso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!personas.length) { %>
+            <tr><td colspan="6" class="text-center text-muted">No hay registros para el filtro actual.</td></tr>
+          <% } else { %>
+            <% personas.forEach((item) => { %>
+              <tr>
+                <td><strong><%= item.nombre_completo %></strong></td>
+                <td><%= item.tipo_documento %> <%= item.numero_documento %></td>
+                <td>
+                  <% if (selectedScope === 'evento') { %>
+                    <%= item.evento_nombre || '-' %>
+                  <% } else { %>
+                    <%= item.unidad_nombre || '-' %>
+                  <% } %>
+                  <% if (item.glosa_visita) { %>
+                    <div class="demo-small"><%= item.glosa_visita %></div>
+                  <% } %>
+                </td>
+                <td><%= item.tipo_llegada || 'A_PIE' %></td>
+                <td>
+                  <% if (item.patente) { %>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                      <span class="badge text-bg-dark"><%= item.patente %></span>
+                      <a class="btn btn-sm btn-outline-dark" href="<%= selectedScope === 'evento' ? '/encargado?scope=evento&evento_id=' + selectedEventId : '/encargado?scope=diaria' %>&vehiculo_persona_id=<%= item.id %>">Ver vehiculo</a>
+                    </div>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.ingreso_id) { %>
+                    <div class="d-flex flex-column gap-1">
+                      <span class="badge text-bg-success">Presente</span>
+                      <small class="text-muted"><%= formatDateTime(item.fecha_ingreso) %></small>
+                    </div>
+                  <% } else { %>
+                    <span class="badge text-bg-secondary">Pendiente</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<% if (selectedScope) { %>
+  <section class="panel">
+    <div class="panel-title-row">
+      <div>
+        <h2>Detalle seleccionado</h2>
+        <div class="demo-small">Resumen operativo del filtro activo.</div>
+      </div>
+    </div>
+    <div class="grid-cards">
+      <article class="metric">
+        <span>Total</span>
+        <strong><%= resumenSeleccion?.total_personas || personas.length || 0 %></strong>
+      </article>
+      <article class="metric">
+        <span>Ingresos</span>
+        <strong><%= resumenSeleccion?.total_ingresos || 0 %></strong>
+      </article>
+      <article class="metric">
+        <span>Pendientes</span>
+        <strong><%= resumenSeleccion?.total_pendientes || 0 %></strong>
+      </article>
+      <article class="metric">
+        <span>Foco</span>
+        <strong><%= selectedScope === 'diaria' ? 'Diaria' : 'Evento' %></strong>
+      </article>
+      <article class="metric">
+        <span>Estacionamientos unidad</span>
+        <strong><%= resumenEstacionamientos.disponibles || 0 %></strong>
+      </article>
+    </div>
+  </section>
+<% } %>
+
+<% if (vehicleDetail) { %>
+  <section class="panel">
+    <h2>Vehiculo asociado</h2>
+    <div class="row g-3">
+      <div class="col-md-4"><strong>Patente:</strong> <%= vehicleDetail.patente %></div>
+      <div class="col-md-4"><strong>Marca:</strong> <%= vehicleDetail.marca || '-' %></div>
+      <div class="col-md-4"><strong>Modelo:</strong> <%= vehicleDetail.modelo || '-' %></div>
+      <div class="col-md-4"><strong>Color:</strong> <%= vehicleDetail.color || '-' %></div>
+      <div class="col-md-4"><strong>Conductor:</strong> <%= vehicleDetail.conductor_nombre || vehicleDetail.nombre_completo %></div>
+      <div class="col-md-4"><strong>Documento conductor:</strong> <%= vehicleDetail.conductor_documento || vehicleDetail.numero_documento %></div>
+    </div>
+  </section>
+<% } %>
+
+<script>
+  (function () {
+    const tipoLlegada = document.getElementById('tipo-llegada');
+    const vehiculoBox = document.getElementById('vehiculo-box');
+    const pasajeroCheck = document.getElementById('con-pasajero');
+    const pasajeroBox = document.getElementById('pasajero-box');
+
+    function syncVehiculo() {
+      if (!tipoLlegada || !vehiculoBox) return;
+      vehiculoBox.hidden = tipoLlegada.value !== 'VEHICULO_PROPIO';
+    }
+
+    function syncPasajero() {
+      if (!pasajeroCheck || !pasajeroBox) return;
+      pasajeroBox.hidden = !pasajeroCheck.checked;
+    }
+
+    if (tipoLlegada) {
+      tipoLlegada.addEventListener('change', syncVehiculo);
+      syncVehiculo();
+    }
+    if (pasajeroCheck) {
+      pasajeroCheck.addEventListener('change', syncPasajero);
+      syncPasajero();
+    }
+  })();
+</script>
+
+<%- include('../layouts/end', { showShell: true }) %>

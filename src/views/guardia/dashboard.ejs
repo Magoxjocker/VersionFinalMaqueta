@@ -1,0 +1,178 @@
+<%- include('../layouts/start', {
+  title,
+  pageRole: 'Guardia',
+  subtitle: 'Control de ingreso por evento o visitas diarias.',
+  user,
+  navItems,
+  showShell: true
+}) %>
+<%- include('../partials/flash') %>
+
+<section class="grid-cards">
+  <article class="metric">
+    <span>Eventos activos</span>
+    <strong><%= eventosActivos.length %></strong>
+  </article>
+  <article class="metric">
+    <span>Visitas diarias</span>
+    <strong><%= resumenDiario.total_personas || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Ingresos diarios</span>
+    <strong><%= resumenDiario.total_ingresos || 0 %></strong>
+  </article>
+  <article class="metric">
+    <span>Pendientes</span>
+    <strong><%= resumenDiario.total_pendientes || 0 %></strong>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Selecciona una card</h2>
+      <div class="demo-small">Primero elige un evento activo o la card de visitas diarias.</div>
+    </div>
+  </div>
+  <div class="cards-row">
+    <% if (!eventosActivos.length) { %>
+      <div class="alert alert-secondary mb-0 w-100">No hay eventos activos.</div>
+    <% } else { %>
+      <% eventosActivos.forEach((evento) => { %>
+        <a class="event-card" href="/guardia?scope=evento&evento_id=<%= evento.id %>">
+          <strong><%= evento.nombre %></strong>
+          <div class="event-meta"><%= evento.codigo_evento %></div>
+          <div class="event-meta"><%= formatDate(evento.fecha_inicio) %> a <%= formatDate(evento.fecha_termino) %></div>
+          <hr>
+          <div class="demo-small">Personas: <%= evento.total_personas || 0 %></div>
+          <div class="demo-small">Ingresos: <%= evento.total_asistentes || 0 %></div>
+        </a>
+      <% }); %>
+    <% } %>
+    <a class="event-card" href="/guardia?scope=diaria">
+      <strong>Visitas diarias</strong>
+      <div class="event-meta">Control fuera de evento</div>
+      <hr>
+      <div class="demo-small">Personas: <%= resumenDiario.total_personas || 0 %></div>
+      <div class="demo-small">Ingresos: <%= resumenDiario.total_ingresos || 0 %></div>
+    </a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>
+        <% if (selectedScope === 'diaria') { %>
+          Visitas diarias
+        <% } else if (selectedScope === 'evento') { %>
+          Personas del evento
+        <% } else { %>
+          Sin seleccion
+        <% } %>
+      </h2>
+      <div class="demo-small">Busca por nombre, documento o patente.</div>
+    </div>
+  </div>
+
+  <% if (!selectedScope) { %>
+    <div class="alert alert-info mb-0">Selecciona una card para cargar el listado.</div>
+  <% } else { %>
+    <form method="get" action="/guardia" class="row g-3 align-items-end mb-3">
+      <input type="hidden" name="scope" value="<%= selectedScope %>">
+      <input type="hidden" name="evento_id" value="<%= selectedEventId || '' %>">
+      <div class="col-md-8">
+        <label class="form-label">Buscar</label>
+        <input name="q" class="form-control" value="<%= search || '' %>" placeholder="Nombre, documento o patente">
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-outline-dark w-100" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    <div class="table-wrap">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Documento</th>
+            <th>Vehiculo</th>
+            <th>Estado</th>
+            <th>Ingreso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!personas.length) { %>
+            <tr><td colspan="5" class="text-center text-muted">No hay registros para el filtro actual.</td></tr>
+          <% } else { %>
+            <% personas.forEach((item) => { %>
+              <tr>
+                <td><strong><%= item.nombre_completo %></strong></td>
+                <td><%= item.tipo_documento %> <%= item.numero_documento %></td>
+                <td>
+                  <% if (item.patente) { %>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                      <span class="badge text-bg-dark"><%= item.patente %></span>
+                      <a class="btn btn-sm btn-outline-dark" href="/guardia?scope=<%= selectedScope %><%= selectedEventId ? '&evento_id=' + selectedEventId : '' %>&vehiculo_persona_id=<%= item.id %>">Vehiculo</a>
+                    </div>
+                  <% } else { %>
+                    <span class="text-muted">A pie</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.ingreso_id) { %>
+                    <span class="badge text-bg-success">Presente</span>
+                  <% } else { %>
+                    <span class="badge text-bg-secondary">Pendiente</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.ingreso_id) { %>
+                    <div class="d-flex flex-column gap-1">
+                      <span><%= formatDateTime(item.fecha_ingreso) %></span>
+                      <small class="text-muted">Ingreso bloqueado</small>
+                    </div>
+                  <% } else { %>
+                    <form action="/guardia/ingresos" method="post" class="d-inline">
+                      <input type="hidden" name="persona_id" value="<%= item.id %>">
+                      <input type="hidden" name="evento_id" value="<%= selectedScope === 'evento' ? selectedEventId : '' %>">
+                      <input type="hidden" name="tipo_participacion" value="<%= selectedScope === 'evento' ? 'EVENTO' : 'VISITA_DIARIA' %>">
+                      <input type="hidden" name="scope" value="<%= selectedScope %>">
+                      <label class="d-flex align-items-center gap-2">
+                        <input type="checkbox" name="confirmar_ingreso" value="1" onchange="if (this.checked) this.form.submit();">
+                        <span>Marcar ingreso</span>
+                      </label>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row">
+    <div>
+      <h2>Detalle de vehiculo</h2>
+      <div class="demo-small">Solo se muestran patente, marca, modelo, color, conductor y documento.</div>
+    </div>
+  </div>
+  <% if (vehicleDetail) { %>
+    <div class="row g-3">
+      <div class="col-md-4"><strong>Patente:</strong> <%= vehicleDetail.patente %></div>
+      <div class="col-md-4"><strong>Marca:</strong> <%= vehicleDetail.marca || '-' %></div>
+      <div class="col-md-4"><strong>Modelo:</strong> <%= vehicleDetail.modelo || '-' %></div>
+      <div class="col-md-4"><strong>Color:</strong> <%= vehicleDetail.color || '-' %></div>
+      <div class="col-md-4"><strong>Conductor:</strong> <%= vehicleDetail.conductor_nombre || vehicleDetail.nombre_completo %></div>
+      <div class="col-md-4"><strong>Documento conductor:</strong> <%= vehicleDetail.conductor_documento || vehicleDetail.numero_documento %></div>
+    </div>
+  <% } else { %>
+    <div class="alert alert-secondary mb-0">Selecciona el boton de vehiculo de una persona para ver sus datos.</div>
+  <% } %>
+</section>
+
+<%- include('../layouts/end', { showShell: true }) %>
